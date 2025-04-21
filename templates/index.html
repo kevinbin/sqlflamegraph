@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-N0KK0DGFCL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-N0KK0DGFCL');
+  </script>
+  <title>MySQL Explain Flame Graph</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    .svg-container {
+      position: relative;
+      margin: 20px auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 10px;
+      display: block;
+      max-width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+      background-color: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .instructions-card {
+      transition: all 0.2s ease;
+    }
+    
+    .instructions-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    
+    .form-container {
+      transition: all 0.3s ease;
+    }
+    
+    .form-container:hover {
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    
+    .copy-btn {
+      position: absolute;
+      right: 18px;
+      top: 38px;
+      padding: 5px;
+      cursor: pointer;
+      color: #6b7280;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+    }
+    
+    .copy-btn:hover {
+      background: #e5e7eb;
+      color: #3b82f6;
+    }
+    
+    
+  </style>
+</head>
+
+<body class="flex flex-col min-h-screen bg-gray-50">
+
+  <header class="sticky top-0 z-10 bg-blue-600 text-white shadow-md">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <h1 class="text-xl md:text-2xl font-bold flex items-center">
+        <i class="fas fa-fire mr-2"></i> MySQL Explain Flame Graph
+      </h1>
+    </div>
+  </header>
+
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column: Input/Output -->
+      <div class="lg:col-span-2">
+        <!-- Input Form -->
+        <div class="form-container bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow mb-8">
+          <form onsubmit="submitForm(event)" class="bg-white rounded-lg shadow-md p-6">
+            <div class="mb-4 relative">
+              <label for="text" class="block text-sm font-medium text-gray-700 mb-2">
+                Paste your EXPLAIN ANALYZE output here:
+              </label>
+              
+              <button id="copy-btn" type="button" onclick="copyExample(event)" class="copy-btn" title="Copy example">
+                <i class="far fa-copy"></i>
+              </button>
+              
+              <textarea
+                name="text"
+                id="text"
+                rows="16"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm hover:border-gray-400 transition-colors"
+                spellcheck="false"
+                placeholder="
+*************************** 1. row ***************************
+EXPLAIN: -> Sort: p.category, unique_buyers DESC  (actual time=2.23..2.23 rows=4 loops=1)
+    -> Stream results  (cost=10.2 rows=33.3) (actual time=1.07..1.93 rows=4 loops=1)
+        -> Filter: ((p.stock < 100) and (p.price > (select #4)))  (cost=10.2 rows=33.3) (actual time=0.832..1.39 rows=4 loops=1)
+            -> Table scan on p  (cost=10.2 rows=100) (actual time=0.0718..0.11 rows=100 loops=1)
+            -> Select #4 (subquery in condition; dependent)
+                -> Aggregate: avg(products.price)  (cost=2.25 rows=1) (actual time=0.0823..0.0823 rows=1 loops=15)
+                    -> Filter: (products.category = p.category)  (cost=1.25 rows=10) (actual time=0.0497..0.078 rows=27.1 loops=15)
+                        -> Table scan on products  (cost=1.25 rows=100) (actual time=0.0484..0.0641 rows=100 loops=15)
+-> Select #2 (subquery in projection; dependent)
+    -> Aggregate: count(distinct o.customer_id)  (cost=9.75 rows=1) (actual time=0.079..0.079 rows=1 loops=4)
+        -> Filter: (o.`status` = 'completed')  (cost=9.39 rows=3.61) (actual time=0.0568..0.0744 rows=16.8 loops=4)
+            -> Index lookup on o using product_id (product_id=p.product_id)  (cost=9.39 rows=36.1) (actual time=0.0558..0.0639 rows=37 loops=4)
+-> Select #3 (subquery in projection; dependent)
+    -> Limit: 1 row(s)  (cost=10.2 rows=1) (actual time=0.0499..0.0499 rows=0 loops=4)
+        -> Filter: (o2.order_date >= <cache>((now() - interval 30 day)))  (cost=10.2 rows=12) (actual time=0.0497..0.0497 rows=0 loops=4)
+            -> Index lookup on o2 using product_id (product_id=p.product_id)  (cost=10.2 rows=36.1) (actual time=0.0367..0.0446 rows=37 loops=4)"
+              ></textarea>
+            </div>
+            
+            <div class="flex justify-end">
+              <input
+                type="submit" 
+                value="Generate Flame Graph"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg cursor-pointer transition-colors flex items-center"
+
+                />
+            </div>
+          </form>
+        </div>
+
+        <!-- Output Section -->
+        <div class="svg-container w-full" id="svg-output">
+
+          <object id="svg-object" type="image/svg+xml" data="" class="w-full border rounded-lg shadow-sm">
+          </object>
+        </div>
+      </div>
+
+      <!-- Right Column: Instructions -->
+      <div class="lg:col-span-1">
+        <div class="instructions-card bg-white rounded-xl shadow-md overflow-hidden mb-6 sticky top-4">
+          <div class="bg-blue-600 px-4 py-3 text-white font-semibold">
+            <i class="fas fa-info-circle mr-2"></i> How to use
+          </div>
+          <div class="p-4">
+            <ol class="list-decimal pl-5 space-y-3 text-gray-700">
+              <li>Paste EXPLAIN ANALYZE output to generate</li>
+              <li>Using API to generate</li>
+              <p class="font-mono bg-gray-100 px-3 py-2 rounded text-sm overflow-x-auto">
+                mysql -BNEe 'explain analyze sql_statement' | curl --data-binary @- https://mysqlflamegraph.koyeb.app/api/sqlflamegraph > explain.svg
+              </p>
+            </ol>
+
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 class="font-semibold text-blue-700 mb-2 flex items-center">
+                <i class="fas fa-clock mr-1"></i> Time cost meaning:
+              </h4>
+              <div class="font-mono bg-gray-100 px-3 py-2 rounded text-sm mb-2">
+                (actual time=0.045..0.049 rows=5 loops=1)
+              </div>
+              <ul class="space-y-1 text-sm">
+                <li class="flex items-start">
+                  <span class="inline-block bg-blue-100 text-blue-800 px-1 rounded mr-2">0.045</span>
+                  <span>Init time (ms) - average time to get first row</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="inline-block bg-blue-100 text-blue-800 px-1 rounded mr-2">0.049</span>
+                  <span>Read time (ms) - average time to get all rows</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="inline-block bg-blue-100 text-blue-800 px-1 rounded mr-2">rows=5</span>
+                  <span>Total number of rows read (all loops)</span>
+                </li>
+                <li class="flex items-start">
+                  <span class="inline-block bg-blue-100 text-blue-800 px-1 rounded mr-2">loops=1</span>
+                  <span>Number of times iterator invoked</span>
+                </li>
+              </ul>
+              <p class="mt-2 text-sm font-medium text-blue-700">
+                Flame graph time = read time × loops
+              </p>
+            </div>
+          </div>
+
+          <div class="p-4 border-t">
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="font-semibold text-gray-800">Performance Tips</h4>
+              <a href="https://dev.mysql.com/blog-archive/mysql-explain-analyze/" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                <i class="fas fa-external-link-alt"></i>
+              </a>
+            </div>
+            <ul class="text-sm space-y-2 text-gray-600">
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                <span>Look for operations with high 'actual time' values</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                <span>Examine table scans - they're often less efficient than index lookups</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                <span>Watch for nested loops with many iterations</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fas fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                <span>Check for operations that filter many rows early in execution</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="w-full bg-gray-100 mt-8 py-4 border-t">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center">
+      <div class="text-gray-600 text-sm mb-2 md:mb-0">
+        Copyright © 2025 Hong Bin. All rights reserved.
+      </div>
+      <div class="flex space-x-4">
+        <a href="https://x.com/hongbin119" target="_blank" class="text-gray-600 hover:text-blue-500">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+  <script>
+       function submitForm(event) {
+        event.preventDefault(); // Prevent the default form submission
+        const textArea = document.getElementById("text");
+
+        // 检查textarea是否为空，如果为空则使用placeholder内容
+        if (!textArea.value.trim()) {
+          textArea.value = textArea.placeholder; // 使用placeholder作为内容
+        }
+
+        const formData = new FormData(event.target); // 在这里获取formData
+
+        fetch("/sqlflamegraph", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.text())
+          .then((svg) => {
+            const svgObject = document.getElementById("svg-object");
+            svgObject.data =
+              "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); // 显示SVG
+          })
+          .catch((error) => console.error("Error:", error));
+      }
+    function copyExample(event) {
+      event.preventDefault();
+      const textArea = document.getElementById("text");
+      textArea.value = textArea.placeholder;
+      textArea.select();
+      document.execCommand("copy");
+      
+    }
+
+  </script>
+</body>
+</html>

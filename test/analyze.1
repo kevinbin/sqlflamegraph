@@ -1,0 +1,14 @@
+*************************** 1. row ***************************
+-> Sort: total_revenue DESC  (actual time=11.4..11.4 rows=100 loops=1)
+    -> Filter: (total_revenue > 10000)  (actual time=10.1..11.3 rows=100 loops=1)
+        -> Stream results  (actual time=10.1..11.2 rows=144 loops=1)
+            -> Group aggregate: count(distinct customers.customer_id), sum(tmp_field), avg(orders.quantity)  (actual time=10.1..11.1 rows=144 loops=1)
+                -> Sort: c.country, p.category, `month`  (actual time=10..10.2 rows=1224 loops=1)
+                    -> Stream results  (cost=449 rows=120) (actual time=0.173..8.68 rows=1224 loops=1)
+                        -> Nested loop inner join  (cost=449 rows=120) (actual time=0.158..7.43 rows=1224 loops=1)
+                            -> Nested loop inner join  (cost=407 rows=120) (actual time=0.151..5.52 rows=1224 loops=1)
+                                -> Filter: ((o.`status` = 'completed') and (o.order_date >= TIMESTAMP'2023-01-01 00:00:00') and (o.product_id is not null) and (o.customer_id is not null))  (cost=365 rows=120) (actual time=0.131..3.53 rows=1224 loops=1)
+                                    -> Table scan on o  (cost=365 rows=3611) (actual time=0.121..2.55 rows=3611 loops=1)
+                                -> Single-row index lookup on p using PRIMARY (product_id=o.product_id)  (cost=0.251 rows=1) (actual time=0.00134..0.0014 rows=1 loops=1224)
+                            -> Single-row index lookup on c using PRIMARY (customer_id=o.customer_id)  (cost=0.251 rows=1) (actual time=0.00129..0.00134 rows=1 loops=1224)
+

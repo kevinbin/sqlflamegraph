@@ -1,0 +1,18 @@
+*************************** 1. row ***************************
+EXPLAIN: -> Nested loop inner join  (cost=32.7 rows=0) (actual time=10.9..10.9 rows=15 loops=1)
+    -> Sort: cs.country, cs.total_spent DESC  (cost=2.6..2.6 rows=0) (actual time=10.9..10.9 rows=15 loops=1)
+        -> Filter: (cs.country_rank <= 5)  (cost=2.5..2.5 rows=0) (actual time=10.7..10.9 rows=15 loops=1)
+            -> Table scan on cs  (cost=2.5..2.5 rows=0) (actual time=10.7..10.9 rows=704 loops=1)
+                -> Materialize CTE customer_stats  (cost=0..0 rows=0) (actual time=10.7..10.7 rows=704 loops=1)
+                    -> Window aggregate: row_number() OVER (PARTITION BY c.country ORDER BY total_spent desc )   (actual time=9.94..10.4 rows=704 loops=1)
+                        -> Sort: c.country, total_spent DESC  (actual time=9.94..10 rows=704 loops=1)
+                            -> Table scan on <temporary>  (actual time=9.1..9.29 rows=704 loops=1)
+                                -> Aggregate using temporary table  (actual time=9.1..9.1 rows=704 loops=1)
+                                    -> Nested loop inner join  (cost=617 rows=361) (actual time=0.094..7.1 rows=1224 loops=1)
+                                        -> Nested loop inner join  (cost=491 rows=361) (actual time=0.0892..5.13 rows=1224 loops=1)
+                                            -> Filter: ((o.`status` = 'completed') and (o.product_id is not null) and (o.customer_id is not null))  (cost=365 rows=361) (actual time=0.077..3.24 rows=1224 loops=1)
+                                                -> Table scan on o  (cost=365 rows=3611) (actual time=0.0714..2.31 rows=3611 loops=1)
+                                            -> Single-row index lookup on p using PRIMARY (product_id=o.product_id)  (cost=0.25 rows=1) (actual time=0.00127..0.00131 rows=1 loops=1224)
+                                        -> Single-row index lookup on c using PRIMARY (customer_id=o.customer_id)  (cost=0.25 rows=1) (actual time=0.00131..0.00137 rows=1 loops=1224)
+    -> Single-row index lookup on c using PRIMARY (customer_id=cs.customer_id)  (cost=0.251 rows=1) (actual time=0.00154..0.00158 rows=1 loops=15)
+

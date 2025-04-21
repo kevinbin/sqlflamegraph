@@ -1,0 +1,18 @@
+*************************** 1. row ***************************
+EXPLAIN: -> Sort: p.category, unique_buyers DESC  (actual time=2.23..2.23 rows=4 loops=1)
+    -> Stream results  (cost=10.2 rows=33.3) (actual time=1.07..1.93 rows=4 loops=1)
+        -> Filter: ((p.stock < 100) and (p.price > (select #4)))  (cost=10.2 rows=33.3) (actual time=0.832..1.39 rows=4 loops=1)
+            -> Table scan on p  (cost=10.2 rows=100) (actual time=0.0718..0.11 rows=100 loops=1)
+            -> Select #4 (subquery in condition; dependent)
+                -> Aggregate: avg(products.price)  (cost=2.25 rows=1) (actual time=0.0823..0.0823 rows=1 loops=15)
+                    -> Filter: (products.category = p.category)  (cost=1.25 rows=10) (actual time=0.0497..0.078 rows=27.1 loops=15)
+                        -> Table scan on products  (cost=1.25 rows=100) (actual time=0.0484..0.0641 rows=100 loops=15)
+-> Select #2 (subquery in projection; dependent)
+    -> Aggregate: count(distinct o.customer_id)  (cost=9.75 rows=1) (actual time=0.079..0.079 rows=1 loops=4)
+        -> Filter: (o.`status` = 'completed')  (cost=9.39 rows=3.61) (actual time=0.0568..0.0744 rows=16.8 loops=4)
+            -> Index lookup on o using product_id (product_id=p.product_id)  (cost=9.39 rows=36.1) (actual time=0.0558..0.0639 rows=37 loops=4)
+-> Select #3 (subquery in projection; dependent)
+    -> Limit: 1 row(s)  (cost=10.2 rows=1) (actual time=0.0499..0.0499 rows=0 loops=4)
+        -> Filter: (o2.order_date >= <cache>((now() - interval 30 day)))  (cost=10.2 rows=12) (actual time=0.0497..0.0497 rows=0 loops=4)
+            -> Index lookup on o2 using product_id (product_id=p.product_id)  (cost=10.2 rows=36.1) (actual time=0.0367..0.0446 rows=37 loops=4)
+
