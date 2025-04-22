@@ -1,28 +1,39 @@
-import asyncpg
-import asyncio
+import os
+import aiomysql
 
-# PostgreSQL connection string
-DB_URL = "postgres://koyeb-adm:npg_0YvdLErITM8p@ep-fancy-sky-a2xtigpt.eu-central-1.pg.koyeb.app/sqlflamegraph"
+# MySQL connection parameters
+MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
+MYSQL_USER = os.getenv('MYSQL_USER', 'root')
+MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', '')
+MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'sqlflamegraph')
+MYSQL_PORT = int(os.getenv('MYSQL_PORT', '3306'))
 
 async def get_connection():
-    """Get an async PostgreSQL connection"""
-    return await asyncpg.connect(DB_URL)
+    """Get an async MySQL connection"""
+    return await aiomysql.connect(
+        host=MYSQL_HOST,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        db=MYSQL_DATABASE,
+        port=MYSQL_PORT,
+        autocommit=True
+    )
 
 async def save_explain(explain_output, ip_address=None, user_agent=None):
     """Save EXPLAIN data to the database asynchronously"""
     conn = await get_connection()
     try:
-        record_id = await conn.fetchval(
-            """
-            INSERT INTO explain (explain_output, ip_address, user_agent)
-            VALUES ($1, $2, $3)
-            RETURNING id
-            """,
-            explain_output, ip_address, user_agent
-        )
-        return record_id
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                """
+                INSERT INTO explains (explain_output, ip_address, user_agent, created_at)
+                VALUES (%s, %s, %s, NOW())
+                """,
+                (explain_output, ip_address, user_agent)
+            )
+            return cursor.lastrowid
     except Exception as e:
         print(f"Error saving explain: {str(e)}")
         raise
     finally:
-        await conn.close()
+        conn.close()

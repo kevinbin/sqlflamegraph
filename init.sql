@@ -1,7 +1,10 @@
-    CREATE TABLE IF NOT EXISTS explain (
-        id SERIAL PRIMARY KEY,
-        explain_output TEXT NOT NULL,
-        ip_address TEXT,
-        user_agent TEXT,
-        created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    )
+CREATE DATABASE IF NOT EXISTS sqlflamegraph;
+USE sqlflamegraph;
+
+CREATE TABLE IF NOT EXISTS explains (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    explain_output TEXT NOT NULL,
+    ip_address VARCHAR(255),
+    user_agent VARCHAR(1000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
